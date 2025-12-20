@@ -44,7 +44,7 @@ This method installs the extension directly from the source code without buildin
 4. **Load the Extension**
    - Click the "Load unpacked" button (top-left)
    - Navigate to the downloaded repository folder
-   - Select the `src` folder (not the root folder)
+   - Select the `AutoFold` folder (not the root folder)
    - Click "Select Folder"
 
 5. **Verify Installation**
