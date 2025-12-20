@@ -1,4 +1,4 @@
-# Autofold - Chrome Extension
+# AutoRange - Chrome Extension
 
 A Chrome extension that automatically folds bad poker hands based on your customizable range. Currently supports PokerNow.club and Ignition Casino.
 
