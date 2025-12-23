@@ -1,0 +1,157 @@
+function click_fold() {
+    // retrieve fold and checkfold buttons
+    var fold_button, checkfold_button;
+    var buttons = document.getElementsByTagName("button");
+
+    // assign buttons
+    for (var i = 0; i < buttons.length; i++) {
+        if (buttons[i].classList.contains("fold")) {
+            fold_button = buttons[i];
+        }
+        else if (buttons[i].classList.contains("check-fold")) {
+            checkfold_button = buttons[i];
+        }
+    }
+
+    // doing the click
+    if (checkfold_button) {
+        checkfold_button.click();
+    }
+    else if (fold_button) {
+        fold_button.click();
+    }
+}
+
+
+// receive information from extension
+window.addEventListener("message", (event) => {
+    if (event.source != window) {
+        return;
+    }
+    if (event.data.type && (event.data.type == "FROM_EXTENSION")) {
+        if (event.data.text) {
+            click_fold();
+        }
+    }
+})
+
+
+function findDealerPosition() {
+    var button = document.getElementsByClassName("dealer-button-ctn")[0];
+    var button_position = parseInt(button.classList[1].split("-")[2]);
+}
+
+// Extract player ID from pokernow.club DOM
+// The player ID is in the href of the anchor tag inside .table-player-name
+// e.g., <a href="/players/449iYoPwk6">Kunga</a> -> "449iYoPwk6"
+function getPlayerId() {
+    try {
+        var player = document.getElementsByClassName("you-player")[0];
+        if (player) {
+            var playerNameLink = player.querySelector(".table-player-name a");
+            if (playerNameLink && playerNameLink.href) {
+                // Extract ID from href like "/players/449iYoPwk6"
+                var match = playerNameLink.href.match(/\/players\/([^/?#]+)/);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+        }
+    } catch (e) {
+    }
+    return null;
+}
+
+// Get player name from pokernow.club DOM
+function getPlayerName() {
+    try {
+        var player = document.getElementsByClassName("you-player")[0];
+        if (player) {
+            var playerNameLink = player.querySelector(".table-player-name a");
+            if (playerNameLink) {
+                return playerNameLink.textContent.trim();
+            }
+        }
+    } catch (e) {
+    }
+    return null;
+}
+
+// read webpage and send cards back to extension
+// this could use some improvement
+// also figure out possibly how to read position
+
+class Hand {
+    constructor(value1, suit1, value2, suit2) {
+        this.value1 = value1;
+        this.suit1 = suit1;
+        this.value2 = value2;
+        this.suit2 = suit2;
+        this.url = window.location.href;
+        this.playerId = getPlayerId();
+        this.playerName = getPlayerName();
+    }
+}
+
+class Card {
+    constructor(value, suit) {
+        this.value = value;
+        this.suit = suit;
+    }
+}
+
+let observer = new MutationObserver(mutationRecords => {    
+    var cards = [];
+
+    // parse through all mutations
+    for (let record of mutationRecords) {
+        let e = record["target"];        
+        if (e.classList.contains("card-container")) {
+            let valueElement = e.getElementsByClassName("value")[0];
+            let suitElement = e.getElementsByClassName("suit")[0];
+            
+            // Check if elements exist before accessing innerHTML
+            if (valueElement && suitElement) {
+                let value = valueElement.innerHTML;
+                let suit = suitElement.innerHTML;
+                cards.push(new Card(value, suit));
+            }
+        }
+    }   
+
+    // send cards to extension 
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage 
+    // would sometimes send one card and undefined, extra check
+    if (cards.length == 2) {
+        let card1 = cards[0];
+        let card2 = cards[1];
+        let hand = new Hand(card1.value, card1.suit, card2.value, card2.suit);
+        
+        window.postMessage({type: "FROM_PAGE", text: JSON.stringify(hand)}, "*");
+    }
+});
+
+
+// create observers
+async function createObservers() {
+    try{
+        var table = document.getElementsByClassName("table")[0];
+        var seats = table.getElementsByClassName("seats")[0];
+        var player = seats.getElementsByClassName("you-player")[0];
+        var tablePlayerCards = player.getElementsByClassName("table-player-cards")[0];
+
+        if (table && player && tablePlayerCards) {
+            observer.observe(tablePlayerCards, {
+                attributes: true,
+                subtree: true
+            });
+            return true;
+        }
+    } catch (error) {
+        await new Promise(r => setTimeout(r, 3000));
+        createObservers();
+    }
+}
+
+createObservers();
+
