@@ -31,6 +31,7 @@
       ],
       "matches": [
         "https://www.pokernow.club/games/*",
+        "https://www.pokernow.com/games/*",
         "https://ignitioncasino.eu/*"
       ],
       "run_at": "document_idle"
@@ -44,6 +45,7 @@
       ],
       "matches": [
         "https://www.pokernow.club/*",
+        "https://www.pokernow.com/*",
         "https://ignitioncasino.eu/*"
       ]
     }
